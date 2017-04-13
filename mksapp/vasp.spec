@@ -21,3 +21,10 @@ cat <<EOF > $CALLINGDIR/rootfs/moduleimports
 /opt/bwhpc/common/compiler/intel/compxe.2015.3.187/impi/5.0.3.048/intel64/lib/libmpifort.so.12*             # workaround wrongly linked MPI lib
 /opt/bwhpc/common/compiler/intel/compxe.2015.3.187/impi/5.0.3.048/intel64/lib/release_mt/libmpi.so.12*      # workaround wrongly linked MPI lib
 EOF
+
+cat << 'EOF' > $CALLINGDIR/rootfs/singularity
+#!/bin/bash
+source /environment
+module chem/vasp/5.3.3.4
+/opt/bwhpc/common/chem/vasp/5.3.3.4/bin/vasp "$@"
+EOF
