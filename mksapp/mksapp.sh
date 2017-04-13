@@ -130,6 +130,7 @@ else
     ssh adm02 "cd $SHAREDWORKDIR && cat SWStack.tar | singularity import centos7-justus.img"
     # FIXME some ldap users do not work
     ssh adm02 "singularity exec -w -B /etc/passwd -B /etc/group $SHAREDWORKDIR/centos7-justus.img sh -c 'setfacl --restore /ACL'"
+    chmod +x $INCLUDES/{environment,test,singularity,.test}  # make these file executable otherwise things may break in the future
     ssh adm02 "cd $INCLUDES && tar -cp . | singularity import $SHAREDWORKDIR/centos7-justus.img"
     ssh adm02 "singularity test $SHAREDWORKDIR/centos7-justus.img"
 
