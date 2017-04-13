@@ -43,9 +43,9 @@ EOF
 
 # FIXME add file lists there (optionally)
 cat <<EOF > $CALLINGDIR/rootfs/moduleimports
-/opt/bwhpc/common/chem/dacapo/2.7.16-intel-14.0                                        # DaCapo+ASE
-/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/lib/intel64                     # Intel Libs
-/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/mkl/lib/intel64                 # Intel MKL
-/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/composer_xe_2013_sp1.4.211/mkl  # Intel MKL symlink
-/opt/bwhpc/common/mpi/openmpi/1.8.7-intel-14.0                                         # OpenMPI built using Intel Compiler
+/opt/bwhpc/common/chem/dacapo/2.7.16-intel-14.0/                                        # DaCapo+ASE
+/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/lib/intel64/                     # Intel Libs
+/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/mkl/lib/intel64/                 # Intel MKL
+/opt/bwhpc/common/compiler/intel/compxe.2013.sp1.4.211/composer_xe_2013_sp1.4.211/mkl   # Intel MKL symlink
+/opt/bwhpc/common/mpi/openmpi/1.8.7-intel-14.0/                                         # OpenMPI built using Intel Compiler
 EOF
