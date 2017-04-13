@@ -10,14 +10,6 @@ if [ "$1" == "" ]; then
   exit 1
 fi
 
-
-### defaults
-#ContainerName=${ContainerName:-"DemoContainer.sapp"}
-#IncludeModule=${IncludeModule:-"chem/gromacs/5.1.4"}
-#VNFSBaseImage=${VNFSBaseImage:-"rhel7.stateless.CiTAR"}
-#ModuleTestScript=${ModuleTestScript:-"/opt/bwhpc/common/chem/gromacs/5.1.4/bwhpc-examples/justus-gromacs-example.moab"}
-#ModuleTestData=${ModuleTestData:-"/opt/bwhpc/common/chem/gromacs/5.1.4/bwhpc-examples/justus-gromacs-example.moab/ion_channel.tpr"}
-
 SHAREDWORKDIR="$CALLINGDIR/$BASHPID" && mkdir -p $SHAREDWORKDIR && cd $SHAREDWORKDIR
 IMGDIR="$CALLINGDIR/images"
 INCLUDES="$CALLINGDIR/rootfs"
@@ -136,11 +128,11 @@ else
     cp $CALLINGDIR/10G_template.img $SHAREDWORKDIR/centos7-justus.img
     ssh adm02 "cd $SHAREDWORKDIR && zcat $IMGDIR/$SUM.tgz | singularity import centos7-justus.img"
     ssh adm02 "cd $SHAREDWORKDIR && cat SWStack.tar | singularity import centos7-justus.img"
-    ssh adm02 "singularity exec -w $SHAREDWORKDIR/centos7-justus.img sh -c 'setfacl --restore /ACL'"
+    # FIXME some ldap users do not work
+    ssh adm02 "singularity exec -w -B /etc/passwd -B /etc/group $SHAREDWORKDIR/centos7-justus.img sh -c 'setfacl --restore /ACL'"
     ssh adm02 "cd $INCLUDES && tar -cp . | singularity import $SHAREDWORKDIR/centos7-justus.img"
     ssh adm02 "singularity test $SHAREDWORKDIR/centos7-justus.img"
 
-# FIXME 
     if [[ "$?" == "0" ]]; then
        echo "Passed container test"
     else
@@ -163,6 +155,7 @@ ln -s $IMGDIR/$SRCSUM2/img "$IMGDIR/$READABLE_NAME"
 
 ### clean shared dir
 rm -rf $SHAREDWORKDIR
+rm -f $INCLUDES/moduleimports
 chown -R $CITARADMIN $IMGDIR
 
 echo "Container is now accessible under $IMGDIR/$READABLE_NAME"
