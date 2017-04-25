@@ -39,7 +39,7 @@ if [[ -f "$CALLINGDIR/10G_template.img" ]]; then
     echo "Found empty template container...good!"
 else
     echo "Empty template container not found. Generate it..."
-    ssh adm02 "singularity create -s 10000 $CALLINGDIR/10G_template.img"
+    singularity create -s 10000 $CALLINGDIR/10G_template.img
     echo "...Done!"
 fi
 
@@ -68,14 +68,14 @@ EOF_DEFFILE
     cat packagelist.txt >> docker.def
 
     cp $CALLINGDIR/10G_template.img $SHAREDWORKDIR/centos7-justus.img
-    ssh adm02 "cd $SHAREDWORKDIR && singularity bootstrap centos7-justus.img docker.def"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity copy centos7-justus.img packagelist.txt docker.def /"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity import centos7-justus.img addons.tar"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mkdir -p /nfs /lustre /scratch /var/spool/torque'"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'touch /etc/ws.ini'"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mv /usr/bin/ssh /usr/bin/ssh_orig'"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img yum clean all"
-    ssh adm02 "cd $SHAREDWORKDIR && singularity export centos7-justus.img | gzip > img"
+    cd $SHAREDWORKDIR && singularity bootstrap centos7-justus.img docker.def
+    cd $SHAREDWORKDIR && singularity copy centos7-justus.img packagelist.txt docker.def /
+    cd $SHAREDWORKDIR && singularity import centos7-justus.img addons.tar
+    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mkdir -p /nfs /lustre /scratch /var/spool/torque'
+    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'touch /etc/ws.ini'
+    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mv /usr/bin/ssh /usr/bin/ssh_orig'
+    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img yum clean all
+    cd $SHAREDWORKDIR && singularity export centos7-justus.img | gzip > img
 
     SUM="$(sha256sum img | awk '{print $1}')"
 
@@ -126,13 +126,13 @@ if [[ -f $IMGDIR/$SRCSUM2/img ]]; then
 else
     echo "Merging image content..."
     cp $CALLINGDIR/10G_template.img $SHAREDWORKDIR/centos7-justus.img
-    ssh adm02 "cd $SHAREDWORKDIR && zcat $IMGDIR/$SUM.tgz | singularity import centos7-justus.img"
-    ssh adm02 "cd $SHAREDWORKDIR && cat SWStack.tar | singularity import centos7-justus.img"
+    cd $SHAREDWORKDIR && zcat $IMGDIR/$SUM.tgz | singularity import centos7-justus.img
+    cd $SHAREDWORKDIR && cat SWStack.tar | singularity import centos7-justus.img
     # FIXME some ldap users do not work
-    ssh adm02 "singularity exec -w -B /etc/passwd -B /etc/group $SHAREDWORKDIR/centos7-justus.img sh -c 'setfacl --restore /ACL'"
+    singularity exec -w -B /etc/passwd -B /etc/group $SHAREDWORKDIR/centos7-justus.img sh -c 'setfacl --restore /ACL'
     chmod +x $INCLUDES/{environment,test,singularity,.test}  # make these file executable otherwise things may break in the future
-    ssh adm02 "cd $INCLUDES && tar -cp . | singularity import $SHAREDWORKDIR/centos7-justus.img"
-    ssh adm02 "singularity test $SHAREDWORKDIR/centos7-justus.img"
+    cd $INCLUDES && tar -cp . | singularity import $SHAREDWORKDIR/centos7-justus.img
+    singularity test $SHAREDWORKDIR/centos7-justus.img
 
     if [[ "$?" == "0" ]]; then
        echo "Passed container test"
