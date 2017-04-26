@@ -25,6 +25,6 @@ EOF
 cat << 'EOF' > $CALLINGDIR/rootfs/singularity
 #!/bin/bash
 source /environment
-module chem/vasp/5.3.3.4
+module load chem/vasp/5.3.3.4
 /opt/bwhpc/common/chem/vasp/5.3.3.4/bin/vasp "$@"
 EOF
