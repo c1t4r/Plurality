@@ -2,7 +2,7 @@ ContainerName="DaCapo.sapp"
 
 IncludeModule="chem/dacapo/2.7.16"
 
-VNFSBaseImage="rhel7.stateless.CiTAR"
+VNFSBaseImage="rhel7.stateless"
 
 cat << 'EOF' > $CALLINGDIR/rootfs/test
 #!/bin/bash
@@ -40,6 +40,8 @@ else
     /usr/bin/python "$@"
 fi
 EOF
+
+cat $CALLINGDIR/rootfs/test > $CALLINGDIR/rootfs/singularity
 
 # FIXME add file lists there (optionally)
 cat <<EOF > $CALLINGDIR/rootfs/moduleimports
