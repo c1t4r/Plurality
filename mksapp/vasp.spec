@@ -1,6 +1,6 @@
 ContainerName="Vasp.sapp"
 IncludeModule="chem/vasp/5.3.3.4"
-VNFSBaseImage="rhel7.stateless"
+VNFSBaseImage="rhel7.stateless.CiTAR"
 
 cat << 'EOF' > $CALLINGDIR/rootfs/test
 #!/bin/bash

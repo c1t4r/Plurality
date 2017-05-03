@@ -2,7 +2,7 @@ ContainerName="DaCapo.sapp"
 
 IncludeModule="chem/dacapo/2.7.16"
 
-VNFSBaseImage="rhel7.stateless"
+VNFSBaseImage="rhel7.stateless.CiTAR"
 
 cat << 'EOF' > $CALLINGDIR/rootfs/test
 #!/bin/bash
