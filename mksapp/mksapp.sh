@@ -68,14 +68,20 @@ EOF_DEFFILE
     cat packagelist.txt >> docker.def
 
     cp $CALLINGDIR/10G_template.img $SHAREDWORKDIR/centos7-justus.img
-    cd $SHAREDWORKDIR && singularity bootstrap centos7-justus.img docker.def
-    cd $SHAREDWORKDIR && singularity copy centos7-justus.img packagelist.txt docker.def /
-    cd $SHAREDWORKDIR && singularity import centos7-justus.img addons.tar
-    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mkdir -p /nfs /lustre /scratch /var/spool/torque'
-    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'touch /etc/ws.ini'
-    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img su -c 'mv /usr/bin/ssh /usr/bin/ssh_orig'
-    cd $SHAREDWORKDIR && singularity exec -w centos7-justus.img yum clean all
-    cd $SHAREDWORKDIR && singularity export centos7-justus.img | gzip > img
+    cd $SHAREDWORKDIR 
+    singularity bootstrap centos7-justus.img docker.def
+    singularity copy centos7-justus.img packagelist.txt docker.def /
+    singularity import centos7-justus.img addons.tar
+    singularity exec -c -w centos7-justus.img su -c 'mkdir -p /lustre /scratch /var/spool/torque /custom/{data_in,data_out,code,misc,system,userenv}'
+    for homedir in $(getent passwd | awk -F: '/ul_theochem/{print $6}/ul_theophys/{print $6}/ul_kiz/{print $6}'); do
+        echo "Creating empty homedir $homedir in container..."
+        singularity exec -c -w centos7-justus.img su -c "mkdir -p $homedir"
+    done
+    
+    singularity exec -c -w centos7-justus.img su -c 'touch /etc/ws.ini'
+    singularity exec -c -w centos7-justus.img su -c 'mv /usr/bin/ssh /usr/bin/ssh_orig'
+    singularity exec -c -w centos7-justus.img yum clean all
+    singularity export centos7-justus.img | gzip > img
 
     SUM="$(sha256sum img | awk '{print $1}')"
 
