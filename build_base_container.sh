@@ -23,11 +23,6 @@ SUM=$( [[ -f $IMGDIR/$SRCSUM/sha256 ]] && cat $IMGDIR/$SRCSUM/sha256 )
 if [[ -d $IMGDIR/$SRCSUM ]]; then
     echo "An up-to-date image for $SRCSUM exists already, no changes detected..."
 else
-    echo "Please enter root password for 'su' "
-    stty -echo
-    read -p "Password: " PASSWD; echo
-    stty echo
-
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
     rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > packagelist.txt
     tar -C $CITARROOTFS -cpf addons.tar usr/local
@@ -54,14 +49,28 @@ EOF_DEFFILE
 
     echo -n "Creating home directory bind points as imports... "
     cd $IMPORTS
-    rm -rf home/*
-    HOMEDIRS="$(getent passwd | awk -F: '/ul_theochem/{print $6}/ul_theophys/{print $6}/ul_kiz/{print $6}' | tr -s '\n' ' ')"
-    cd $IMPORTS && mkdir -p "$HOMEDIRS"
+    rm -rf home
+    HOMEDIRS="$(getent passwd | awk -F: '/ul_theochem/{print "."$6}/ul_theophys/{print "."$6}/ul_kiz/{print "."$6}' | tr -s '\n' ' ')"
+    cd $IMPORTS && mkdir -p $HOMEDIRS
+
+    ### begin - su part
+
+    echo "Please enter root password for 'su' "
+    stty -echo
+    read -p "Password: " PASSWD; echo
+    stty echo
+
+    if [[ -f $CALLINGDIR/template.img ]]; then
+        echo "Template container image found, using it..."
+    else
+        echo -n "Creating template container image..." && echo "[$CONTAINER_COMMAND]"
+        CONTAINER_COMMAND="singularity create -s 3000 $CALLINGDIR/template.img" && echo "[$CONTAINER_COMMAND]"
+        echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
+    fi
 
     cp $CALLINGDIR/template.img $SHAREDWORKDIR/centos7-justus.img
     cd $SHAREDWORKDIR 
 
-    ### begin - su part
     echo -n "Bootstrapping CentOS7 base system... "
     CONTAINER_COMMAND="singularity bootstrap centos7-justus.img docker.def" && echo "[$CONTAINER_COMMAND]"
     echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
