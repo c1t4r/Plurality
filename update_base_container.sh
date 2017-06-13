@@ -8,6 +8,7 @@
 #  --remote ; triggers remote builds on shub
 #  --all    ; local image plus triggering of remote builds
 #
+# FIXME .gitignore workaround will not do! Rethink how to do it :)
 # TODO add dockerfile support
 # 
 # Default is: --local
@@ -35,7 +36,6 @@ if [[ -d $IMGDIR/$SRCSUM ]]; then
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
     rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > packagelist.txt
-#    tar -C $CITARROOTFS -cpf addons.tar usr/local
     cat << EOF_DEFFILE > docker.def
 BootStrap: docker
 From: centos:7
@@ -50,7 +50,7 @@ IncludeCmd: yes
 %files
     /usr/local/   /usr/local/
     $IMPORTS/*    /
-    $IMPORTS/.singularity.d/ /
+    $IMPORTS/.singularity.d /
 
 %post
     echo "Installing JUSTUS software package list"
@@ -66,8 +66,24 @@ EOF_DEFFILE
     cd $SHAREDWORKDIR 
 
     git clone $GIT_URL containerspec
-    git config credential.helper store
-    git config --global credential.helper 'cache --timeout 150000'
+    cp docker.def containerspec
+    cd containerspec
+
+    cat docker.def | awk '/^%files/{begin=1;next}/^%/{begin=0}{if ((begin)&&$0!="") printf("mkdir -p ./imports/%s && rsync -raphvz %s ./imports/%s\n", $2, $1, $2)}' >> imports.sh
+    chmod +x imports.sh
+    ./imports.sh
+    # fix empty dirs stupid git doesn't add them otherwise!
+    find imports -type d -empty -execdir touch {}/.gitignore \;
+    
+    sed -i 's#'$IMPORTS'#/imports#' docker.def
+    mv docker.def Singularity
+    echo "" >> README.md
+    echo "* updated build: $(date $DATESTR)" >> README.md
+    git add Singularity imports.sh imports/ README.md
+    git commit -am  'updated build'
+    git push
+
+    cd ..
 
     ### begin - su part
 
