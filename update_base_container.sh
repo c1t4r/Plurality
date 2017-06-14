@@ -36,7 +36,7 @@ if [[ -d $IMGDIR/$SRCSUM ]]; then
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
     rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > packagelist.txt
-    cat << EOF_DEFFILE > singularity.def
+    cat << 'EOF_DEFFILE' > singularity.def
 BootStrap: docker
 From: centos:7
 IncludeCmd: yes
