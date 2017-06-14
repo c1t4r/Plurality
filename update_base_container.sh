@@ -64,7 +64,7 @@ cat << 'EOF_DEFFILE' >> singularity.def
     git clone https://github.com/c1t4r/Plurality.git -b master
     cd Plurality/rootfs
     git checkout-index -a -f --prefix=$IMPORTDIR/
-    find $IMPORTDIR/rootfs -type d -empty -execdir rm -f {}/.gitignore \;
+    find $IMPORTDIR/rootfs -type d -execdir rm -f {}/.gitignore \;
     rm -f /.singularity.d/actions/* 
     rsync --ignore-existing -rahlvp $IMPORTDIR/rootfs/ /
     cd /
