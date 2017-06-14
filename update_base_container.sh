@@ -82,7 +82,7 @@ EOF_DEFFILE
     echo "* updated build: $(date $DATESTR)" >> README.md
     git add Singularity README.md
     git commit -am 'updated build'
-    #git push
+    git push
 
     cd ..
 
@@ -101,6 +101,7 @@ EOF_DEFFILE
     CONTAINER_COMMAND="singularity bootstrap centos7-justus.img singularity.def" && echo "[$CONTAINER_COMMAND]"
     echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
 
+    # TODO needed???
     sync
 
     SUM="$(sha256sum centos7-justus.img | awk '{print $1}')"
