@@ -61,7 +61,7 @@ EOF_DEFFILE
 cat << 'EOF_DEFFILE' >> singularity.def
     IMPORTDIR=$(mktemp -d)
     cd $IMPORTDIR
-    git clone https://github.com/c1t4r/Plurality.git -b Development
+    git clone https://github.com/c1t4r/Plurality.git -b master
     mkdir $IMPORTDIR/files
     cd Plurality/rootfs
     git checkout-index -a -f --prefix=$IMPORTDIR/
