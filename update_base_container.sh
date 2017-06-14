@@ -64,8 +64,8 @@ cat << 'EOF_DEFFILE' >> singularity.def
     git clone https://github.com/c1t4r/Plurality.git -b Development
     mkdir $IMPORTDIR/files
     cd Plurality/rootfs
-    git checkout-index -a -f $IMPORTDIR/files/
-    cp -rav $IMPORTDIR/files/*.* /
+    git checkout-index -a -f --prefix=$IMPORTDIR/
+    rsync --ignore-existing -rahvp . /
     cd /
     rm -rf $IMPORTDIR
 EOF_DEFFILE
@@ -96,7 +96,7 @@ EOF_DEFFILE
     echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
 
     echo -n "Bootstrapping CentOS7 base system... "
-    CONTAINER_COMMAND="singularity bootstrap centos7-justus.img docker.def" && echo "[$CONTAINER_COMMAND]"
+    CONTAINER_COMMAND="singularity bootstrap centos7-justus.img singularity.def" && echo "[$CONTAINER_COMMAND]"
     echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
 
     sync
