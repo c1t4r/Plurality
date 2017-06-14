@@ -8,10 +8,10 @@
 #  --remote ; triggers remote builds on shub
 #  --all    ; local image plus triggering of remote builds
 #
-# FIXME .gitignore workaround will not do! Rethink how to do it :)
+# TODO treat build modes properly
 # TODO add dockerfile support
 # 
-# Default is: --local
+# Default is: --all
 BUILDMODE="${1:-'--local'}"
 CALLINGDIR=`dirname $(readlink -f $0)`
 GIT_URL="git@github.com:c1t4r/CiTAR-Containers.git"
