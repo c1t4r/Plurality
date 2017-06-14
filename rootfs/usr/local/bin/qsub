@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Make sure qsub is executed by msub.
+echo "$@" | /usr/bin/grep '\-v MOAB_SUBMITDIR' | /usr/bin/grep -q 'x=SID:Moab' 
+if [ $? -ne 0 ]; then 
+  # qsub is executed directly by user
+  echo "qsub is not supported on this system. Please use msub." 
+else 
+  # qsub is executed via msub 
+  exec /usr/local/bin/qsub.orig/qsub "$@"
+fi

@@ -1,0 +1,57 @@
+#!/bin/bash
+ERR=`ipmitool sel list -v 2>/dev/null|grep -B 1 ECC|sort -u|grep Data|awk {'print $4'} 2>/dev/null`
+DIMM=`echo $ERR|cut -b 5,6`
+case $DIMM in
+	00)
+		echo CPU1_DIMM1
+	;;
+	01)
+		echo CPU1_DIMM2
+	;;
+	02)
+		echo CPU1_DIMM3
+	;;
+	03)
+		echo CPU1_DIMM4
+	;;
+	04)
+		echo CPU1_DIMM5
+	;;
+	05)
+		echo CPU1_DIMM6
+	;;
+	06)
+		echo CPU1_DIMM7
+	;;
+	07)
+		echo CPU1_DIMM8
+	;;
+	08)
+		echo CPU2_DIMM1
+	;;
+	09)
+		echo CPU2_DIMM2
+	;;
+	0a)
+		echo CPU2_DIMM3
+	;;
+	0b)
+		echo CPU2_DIMM4
+	;;
+	0c)
+		echo CPU2_DIMM5
+	;;
+	0d)
+		echo CPU2_DIMM6
+	;;
+	0e)
+		echo CPU2_DIMM7
+	;;
+	0f)
+		echo CPU2_DIMM8
+	;;
+	*)
+		echo NO DIMM FOUND
+	;;
+esac
+	

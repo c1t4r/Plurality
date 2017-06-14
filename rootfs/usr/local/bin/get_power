@@ -1,0 +1,2 @@
+#!/bin/bash
+ipmitool sdr type 0x03|grep $1|awk {'print $10" "$11'}

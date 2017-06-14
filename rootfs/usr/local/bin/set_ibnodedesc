@@ -1,0 +1,2 @@
+#!/bin/bash
+echo -n "`hostname -s` qib0" > /sys/class/infiniband/qib0/node_desc

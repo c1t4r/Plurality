@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo /opt/nhc/1.4/sbin/nhc
+

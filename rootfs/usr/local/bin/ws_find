@@ -1,0 +1,332 @@
+#!/usr/bin/python -E 
+
+# Authors: Holger Berger (NEC), Thomas Beisel (HLRS), Martin Hecht (HLRS)
+# LICNESE:  Copyright (C) 2010 Holger Berger (NEC), Thomas Beisel (HLRS, University of Stuttgart), Martin Hecht (HLRS)
+#    This file is part of workspace.
+#
+#    workspace is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    workspace is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with workspace.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# ws_find
+#
+# the file ws_find is generated automatically from ws_find.py
+#
+# example for /etc/ws.ini
+#
+######################################################
+## standard workspace for all users
+#[default]
+#dbdir: /home/berger/ws/new/
+#
+#[gpfs]
+#dbdir: /gpfs/var/ws        
+#duration:  31                
+#allowedgroups: blabla,hpc43598,rus00598,users
+#inifile: /gpfs/var/ws/var/ws/.users.ini 
+#
+#[gpfs2]
+#dbdir: /gpfs/etc/ws          
+#duration: 40
+#allowedusers: hwwnec5
+#groupdefault: hwwnec,hwwadm
+#accounting: 0  # switch off accounting on this file system
+#
+#
+## values not specified above are taken from here
+#[DEFAULT]
+#duration: 30
+#maxextensions: 5
+#
+######################################################
+# 
+# example of users.ini
+#######################################################
+## exceptions for special users
+#[hpcsysadmin]
+#duration: 200
+#maxextensions: 15
+#accounting: 0
+#
+#[somotheruser]
+#duration:  60                
+#maxextensions: 2
+#
+######################################################
+#
+# gpoupdefault/userdefault overwrites allowedusers/allowedgroups!
+# UID of ws user is hardcoded
+# this code uses ' as string delimiter, '' is reserved for calling
+# c code!!!!
+#
+# H.Berger 2006
+#
+# Fri Nov 24 14:27:32 CET 2006
+# introduced dbuid in ws.ini and change of uid before accessing db files
+# 
+#
+# Thu 29. Apr 16:14:59 CEST 2010
+# introduced ability to extend a workspace 
+# ws_release moves the workspace to the removepath (adjustable in ws.ini)
+# introduced a user.ini file to override settings for duration and maxextensions
+# introduced possibility to switch on / off accounting
+# Martin Hecht (HLRS)
+# 
+
+import ConfigParser,getopt,sys,pwd,grp,os,os.path,time,random,glob
+
+WSINI='/etc/ws.ini'
+WSUID=85 # UID of workspace service inserted via sed
+DEBUG=0
+operlist = [ 'hwwnec5','root','hwwnec4','hwwadm3','hwwnec17' ]
+
+version=3.0
+
+
+class Ws(object):
+  __slots__=['name','dbdir','dbuid','duration','maxextensions','allowedusers','accounting','inifile','usersettings','allowedgroups','groupdefault','userdefault','removepath']
+  def __init__(self,name):
+    self.name=name
+    self.dbuid,self.dbdir,self.duration,self.maxextensions,self.allowedusers,self.accounting,self.inifile,self.usersettings,self.allowedgroups,self.removepath = (WSUID,'',0,0,[],1,'',{},[],'../.ws_save/')
+  def __repr__(self):
+    return '\nName: %s\nDir: %s\nDuration: %d\nMaxextensions: %d\nAllowedusers: %s\nInifile: %s\nAccounting: %s\nAllowedgroups: %s\nRemovepath: %s\n' % (
+      self.name, self.dbdir, self.duration, self.maxextensions, str(self.allowedusers), self.inifile, self.accounting, str(self.allowedgroups), str(self.removepath))
+
+class Usersettings(object):
+  __slots__=['name','duration','maxextensions','accounting']
+  def __init__(self,name):
+    self.name=name
+    self.duration,self.maxextensions,self.accounting = (-1,-1,-1)
+  def __repr__(self):
+    return '\nName: %s\nDuration: %d\nMaxextensions: %d\nAccounting: %d\n' % (
+      self.name, self.duration, self.maxextensions,self.accounting)
+
+
+def usage():
+  sys.stderr.write('%s [-F <fstype>] [-l] [-a] [<workspacename>]\n'%sys.argv[0])
+  sys.stderr.write(' return path of the workspace with the specified name\n')
+  sys.stderr.write(' -F allows users to choose a specific file system\n')
+  sys.stderr.write(' -a searches on all available file systems\n')
+
+def read_conf(workspaces,groups_with_default,users_with_default):
+  '''read config file'''
+  global DEBUG
+
+  if not os.path.exists(WSINI):
+    sys.stderr.write('no workspace configuration file on this host!\n')
+    sys.exit(1)
+
+  config = ConfigParser.SafeConfigParser()
+  config.read(WSINI)
+
+  for sec in config.sections():
+    ws=Ws(sec)
+    if config.has_option(sec,'dbuid'):
+      ws.dbuid=config.getint(sec,'dbuid')
+    if config.has_option(sec,'dbdir'):
+      ws.dbdir=config.get(sec,'dbdir')
+    if config.has_option(sec,'removepath'):
+      ws.removepath=config.get(sec,'removepath')
+    else:
+      ws.removepath=config.get(sec,'dbdir')+'/../../.ws_save'
+    if config.has_option(sec,'duration'):
+      ws.duration=config.getint(sec,'duration')
+    if config.has_option(sec,'maxextensions'):
+      ws.maxextensions=config.getint(sec,'maxextensions')
+    if config.has_option(sec,'allowedusers'):
+      ws.allowedusers=config.get(sec,'allowedusers').split(',')
+    if config.has_option(sec,'inifile'):
+      ws.inifile=config.get(sec,'inifile')
+    else:
+      ws.inifile=ws.dbdir+'/users.ini'
+    if config.has_option(sec,'accounting'):
+      ws.accounting=config.getint(sec,'accounting')
+    if config.has_option(sec,'allowedgroups'):
+      ws.allowedgroups=config.get(sec,'allowedgroups').split(',')
+    if config.has_option(sec,'groupdefault'):
+      value=config.get(sec,'groupdefault')
+      ws.groupdefault=value.split(',')
+      for g in value.split(','):
+        groups_with_default[g]=sec
+    if config.has_option(sec,'userdefault'):
+      value=config.get(sec,'userdefault')
+      ws.userdefault=value.split(',')
+      for g in value.split(','):
+        users_with_default[g]=sec
+    if os.path.exists(ws.inifile):
+      userconf = ConfigParser.SafeConfigParser()
+      userconf.read(ws.inifile)
+      for usec in userconf.sections():
+        usettings=Usersettings(usec)
+	if userconf.has_option(usec,'duration'):
+	  usettings.duration=userconf.getint(usec,'duration')
+        if userconf.has_option(usec,'maxextensions'):
+           usettings.maxextensions=userconf.getint(usec,'maxextensions')
+        if userconf.has_option(usec,'accounting'):
+           usettings.accounting=userconf.getint(usec,'accounting')
+	ws.usersettings[usec]=usettings
+    workspaces[sec]=ws
+
+
+
+
+def parse_and_check():
+  '''parse and check command line args, and return a tuple
+  of filesystem, number, workspacename and duration'''
+  global DEBUG
+
+  try:
+    opts, args = getopt.getopt(sys.argv[1:], 'n:F:hal')
+  except getopt.GetoptError:
+    usage()
+    sys.exit(2)
+
+  filesystem=None
+  number=1
+  list=None
+  all=None
+  for o,a in opts:
+    if o == '-F':
+      filesystem = a
+    if o == '-h':
+      usage()
+      sys.exit(2)
+    if o == '-l':
+      list=1
+    if o == '-a':
+      all=1
+
+
+  # check commandline switches
+  if filesystem:
+    if not filesystem in workspaces:
+      sys.stderr.write('WS: unknown filesystem specified!\n')
+      sys.exit(3)
+
+  # find out who we are!
+  uid=os.getuid()
+  gid=os.getgid()
+  user=pwd.getpwuid(uid)[0]
+  group=grp.getgrgid(gid)[0]
+  groups=[grp.getgrgid(gid_tmp)[0] for gid_tmp in os.getgroups()]
+
+  if DEBUG:
+    print 'uid:',uid
+    print 'gid:',gid
+    print 'user:',user
+    print 'group:',group
+    print 'euid:',os.geteuid()
+    print 'egid:',os.getegid()
+
+  # check if we are allowed to use that workspace
+  if filesystem:
+    userok=True
+    if len(workspaces[filesystem].allowedusers)>0 or len(workspaces[filesystem].allowedgroups)>0:
+      userok=False
+    for g in groups:
+      if g in workspaces[filesystem].allowedgroups:
+	userok=True
+        break
+    if user in workspaces[filesystem].allowedusers or group in workspaces[filesystem].allowedgroups:
+      userok=True
+    if not userok:
+      sys.stderr.write('WS: you are not allowed to use the specified workspace!\n')
+      sys.exit(4)
+
+  # check if there is a overloaded default workspace for this user/group
+  if not filesystem:
+    if group in groups_with_default:
+      filesystem=groups_with_default[group]
+    elif user in users_with_default:
+      filesystem=users_with_default[user]
+    else:
+      filesystem='default'
+
+  if DEBUG:
+    print 'filesystem:', filesystem
+    print 'dbdir:',workspaces[filesystem].dbdir
+    print 'inifile:',workspaces[filesystem].inifile
+
+  # check if there are exceptions defined for this user (negative values indicate that the value was not set for the user)
+  if len(workspaces[filesystem].usersettings)>0:
+    if user in workspaces[filesystem].usersettings:
+      if(workspaces[filesystem].usersettings[user].duration>=0):
+         workspaces[filesystem].duration = workspaces[filesystem].usersettings[user].duration
+      if(workspaces[filesystem].usersettings[user].maxextensions>=0):
+         workspaces[filesystem].maxextensions = workspaces[filesystem].usersettings[user].maxextensions
+      if(workspaces[filesystem].usersettings[user].accounting>=0):
+         workspaces[filesystem].accounting = workspaces[filesystem].usersettings[user].accounting
+
+
+  legalworkspaces=[]
+  for f in workspaces:
+    userok=True
+    if len(workspaces[f].allowedusers)>0 or len(workspaces[f].allowedgroups)>0:
+      userok=False
+    for g in groups:
+      if g in workspaces[f].allowedgroups:
+	userok=True
+        break
+    if user in workspaces[f].allowedusers or group in workspaces[f].allowedgroups:
+      userok=True
+    if userok:
+      legalworkspaces.append(f)
+
+  if list:
+    print 'available filesystems for workspaces:'
+    for f in legalworkspaces:
+      print ' ',f 
+    sys.exit(0)
+
+  # get workspacename
+  if len(args)<1:
+    usage()
+    sys.exit(1)
+  workspacename=args[0] 
+
+  return (filesystem, number, workspacename, user, group, uid, gid, all, legalworkspaces)
+
+
+
+###############################################################################
+
+if __name__ == '__main__':
+
+  # read configuration file
+
+  workspaces={}
+  groups_with_default={}
+  users_with_default={}
+
+  read_conf(workspaces,groups_with_default,users_with_default)
+
+  # parse commandline arguments and check all args
+  (filesystem, number, workspacename, user, group, uid, gid,all,legalworkspaces) = parse_and_check()
+
+  if all:
+    fslist=legalworkspaces
+  else:
+    fslist=[filesystem]
+
+  for fs in fslist:
+    # name of database file to be created
+    dbfilename='%s/db/%s-%s' % (workspaces[fs].dbdir, user, workspacename)
+    if os.path.exists(dbfilename):
+      f=open(dbfilename,'r')
+      duration=f.readline()
+      for line in f.readlines():
+        if line.find("acctcode:")!=0:
+          if line.find('available extensions:')!=0:
+            print line[:-1],
+  print
+  

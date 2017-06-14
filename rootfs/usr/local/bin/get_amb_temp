@@ -1,0 +1,2 @@
+#!/bin/bash
+ipmitool sdr type 0x01|grep Amb|awk {'print $11'}

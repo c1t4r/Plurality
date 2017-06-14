@@ -1,0 +1,30 @@
+#!/bin/bash
+exitcode=0 ;
+
+errmsg=$(/usr/bin/ipmitool -H ${1}bmc -U ADMIN -P ADMIN sel elist |grep ECC) ;
+
+# print all log errors for nagios
+
+if [ ${#errmsg}  -gt 0 ] ; then
+  # we had *some* ecc errors, that makes it WARNING at least
+
+  exitcode=1;
+  number_errs=$( wc -l <<< "$errmsg" )
+  if grep -q Uncorr <<< "$errmsg" ; then 
+    exitcode=2; echo "CRITICAL - Uncorrectable errors";  
+  elif [ "$number_errs" -gt 10 ] ; then  
+    exitcode=2; echo "CRITICAL - >10 correctable ECC errors" ; 
+  else 
+    echo "WARNING - $number_errs correctable ECC errors";
+  fi 
+
+
+else
+echo "OK, no errors";
+fi
+echo 
+echo "$errmsg";
+
+# exitcodee 0="OK" 1="WARNING" 2="CRITICAL
+exit $exitcode
+
