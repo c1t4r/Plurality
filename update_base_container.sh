@@ -65,9 +65,11 @@ cat << 'EOF_DEFFILE' >> singularity.def
     mkdir $IMPORTDIR/files
     cd Plurality/rootfs
     git checkout-index -a -f --prefix=$IMPORTDIR/
+    cd $IMPORTDIR/rootfs
     rm -f /.singularity.d/actions/*
     rsync --ignore-existing -rahvp . /
     cd /
+    chmod -R a+rwx /custom/*
     rm -rf $IMPORTDIR
 EOF_DEFFILE
 
@@ -80,8 +82,8 @@ EOF_DEFFILE
     echo "" >> README.md
     echo "* updated build: $(date $DATESTR)" >> README.md
     git add Singularity README.md
-    git commit -am  'updated build'
-    git push
+    git commit -am 'updated build'
+    #git push
 
     cd ..
 
