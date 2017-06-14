@@ -62,14 +62,13 @@ cat << 'EOF_DEFFILE' >> singularity.def
     IMPORTDIR=$(mktemp -d)
     cd $IMPORTDIR
     git clone https://github.com/c1t4r/Plurality.git -b master
-    mkdir $IMPORTDIR/files
     cd Plurality/rootfs
     git checkout-index -a -f --prefix=$IMPORTDIR/
-    cd $IMPORTDIR/rootfs
-    rm -f /.singularity.d/actions/*
-    rsync --ignore-existing -rahvp . /
+    find $IMPORTDIR/rootfs -type d -empty -execdir rm -f {}/.gitignore \;
+    rm -f /.singularity.d/actions/* 
+    rsync --ignore-existing -rahlvp $IMPORTDIR/rootfs/ /
     cd /
-    chmod -R a+rwx /custom/*
+    chmod -R a+rwx /opt/bwhpc/common /custom/*
     rm -rf $IMPORTDIR
 EOF_DEFFILE
 
