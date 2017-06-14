@@ -36,7 +36,7 @@ if [[ -d $IMGDIR/$SRCSUM ]]; then
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
     rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > packagelist.txt
-    cat << EOF_DEFFILE > docker.def
+    cat << EOF_DEFFILE > singularity.def
 BootStrap: docker
 From: centos:7
 IncludeCmd: yes
@@ -47,41 +47,40 @@ IncludeCmd: yes
 %environment
     export PS1='\[\033[01;32m\]\u@\${SINGULARITY_CONTAINER}@\h\[\033[01;34m\] \w \\$\[\033[00m\] '
 
-%files
-    /usr/local/   /usr/local/
-    $IMPORTS/*    /
-    $IMPORTS/.singularity.d /
-
 %post
     echo "Installing JUSTUS software package list"
     yum -y install deltarpm
     yum -y --skip-broken install \\
 EOF_DEFFILE
     echo "Retrieving package list..."
-    cat packagelist.txt >> docker.def
-    echo "" >> docker.def
-    echo "    yum clean all" >> docker.def
-    echo "    mv /usr/bin/ssh /usr/bin/ssh_orig" >> docker.def
+    cat packagelist.txt >> singularity.def
+    echo "" >> singularity.def
+    echo "    yum clean all" >> singularity.def
+    echo "    mv /usr/bin/ssh /usr/bin/ssh_orig" >> singularity.def
+
+cat << 'EOF_DEFFILE' >> singularity.def
+    IMPORTDIR=$(mktemp -d)
+    cd $IMPORTDIR
+    git clone https://github.com/c1t4r/Plurality.git -b Development
+    mkdir $IMPORTDIR/files
+    cd Plurality/rootfs
+    git checkout-index -a -f $IMPORTDIR/files/
+    cp -rav $IMPORTDIR/files/*.* /
+    cd /
+    rm -rf $IMPORTDIR
+EOF_DEFFILE
 
     cd $SHAREDWORKDIR 
 
     git clone $GIT_URL containerspec
-    cp docker.def containerspec
+    cp singularity.def containerspec/Singularity
     cd containerspec
 
-    cat docker.def | awk '/^%files/{begin=1;next}/^%/{begin=0}{if ((begin)&&$0!="") printf("mkdir -p ./imports/%s && rsync -raphvz %s ./imports/%s\n", $2, $1, $2)}' >> imports.sh
-    chmod +x imports.sh
-    ./imports.sh
-    # fix empty dirs stupid git doesn't add them otherwise!
-    find imports -type d -empty -execdir touch {}/.gitignore \;
-    
-    sed -i 's#'$IMPORTS'#/imports#' docker.def
-    mv docker.def Singularity
     echo "" >> README.md
     echo "* updated build: $(date $DATESTR)" >> README.md
-    git add Singularity imports.sh imports/ README.md
+    git add Singularity README.md
     git commit -am  'updated build'
-    git push
+#    git push
 
     cd ..
 
