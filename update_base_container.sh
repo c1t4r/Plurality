@@ -31,7 +31,7 @@ rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > $SHAREDWORKDIR/p
 SRCSUM="$(sha256sum $SHAREDWORKDIR/packagelist.txt | awk '{print $1}')"
 SUM=$( [[ -f $IMGDIR/$SRCSUM/sha256 ]] && cat $IMGDIR/$SRCSUM/sha256 )
 
-if [[ -d $IMGDIR/$SRCSUM ]] && [[ $BUILDMODE != "--remote" ]]; then
+if [[ -d $IMGDIR/$SRCSUM ]] && [[ $BUILDMODE != "--remote" ]] && [[ $BUILDMODE != "--force-local" ]]; then
     echo "An up-to-date image for $SRCSUM exists already, no changes detected..."
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
