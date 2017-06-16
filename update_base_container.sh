@@ -24,14 +24,14 @@ VNFSBaseImage="rhel7.stateless.CiTAR"
 CITARROOTFS="/var/lib/perceus/vnfs/$VNFSBaseImage/rootfs"
 DATESTR="+%Y-%m-%d-%H-%M"
 
-echo "Building JUSTUS Base Image"
+echo "Building JUSTUS Base Image in $BUILDMODE mode"
 
 rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > $SHAREDWORKDIR/packagelist.txt
 
 SRCSUM="$(sha256sum $SHAREDWORKDIR/packagelist.txt | awk '{print $1}')"
 SUM=$( [[ -f $IMGDIR/$SRCSUM/sha256 ]] && cat $IMGDIR/$SRCSUM/sha256 )
 
-if [[ -d $IMGDIR/$SRCSUM -a -n $BUILDMODE="--remote" ]]; then
+if [[ -d $IMGDIR/$SRCSUM ]] && [[ $BUILDMODE != "--remote" ]]; then
     echo "An up-to-date image for $SRCSUM exists already, no changes detected..."
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
@@ -55,7 +55,7 @@ export PS1="\[\033[01;32m\]\u@${SINGULARITY_CONTAINER}@\h\[\033[01;34m\] \w \$\[
 %post
     echo "Installing JUSTUS software package list"
     yum -y install deltarpm
-    yum -y --skip-broken install \\
+    yum -y --skip-broken install \
 EOF_DEFFILE
     echo "Retrieving package list..."
     cat packagelist.txt >> singularity.def
@@ -79,7 +79,7 @@ EOF_DEFFILE
 
     cd $SHAREDWORKDIR 
 
-    if [ $BUILDMODE="--all" -o $BUILDMODE="--remote" ]; then
+    if [[ $BUILDMODE = "--all" ]] || [[ $BUILDMODE = "--remote" ]]; then
         git clone $GIT_URL containerspec
         cp singularity.def containerspec/Singularity
         cd containerspec
@@ -95,7 +95,7 @@ EOF_DEFFILE
 
     ### begin - su part
 
-    if [ -n $BUILDMODE="--remote" ]; then
+    if [[ $BUILDMODE != "--remote" ]]; then
     echo "Please enter root password for 'su' "
     stty -echo
     read -p "Password: " PASSWD; echo
@@ -122,21 +122,20 @@ EOF_DEFFILE
     echo "Done!"
     ### end - su part
     fi
-fi
 
-if [ -d $IMGDIR/$SRCSUM ]; then
-echo "Updating the image link..."
-READABLE_FN="$VNFSBaseImage-$(date $DATESTR).img"
-ln -sf $IMGDIR/$SRCSUM/img "$IMGDIR/$READABLE_FN"
+    echo "Updating the image link..."
+    READABLE_FN="$VNFSBaseImage-$(date $DATESTR).img"
+    ln -sf $IMGDIR/$SRCSUM/img "$IMGDIR/$READABLE_FN"
 fi
 
 echo "Cleaning shared directory..."
 #rm -rf $SHAREDWORKDIR
 
-if [ $BUILDMODE="--remote" -o $BUILDMODE="--all" ]; then
-echo "An updated container will be available shortly (~30Mins) via singularity pull shub://c1t4r/CiTAR-Containers"
+if [[ $BUILDMODE = "--remote" ]] || [[ $BUILDMODE = "--all" ]]; then
+  echo "An updated container will be available shortly (~30Mins) via singularity pull shub://c1t4r/CiTAR-Containers"
 fi
-if [ -d $IMGDIR/$SRCSUM ]; then
-echo "Container is locally accessible under $IMGDIR/$READABLE_FN"
+if [[ -d $IMGDIR/$SRCSUM ]]; then
+  echo "An updated container is locally accessible under $IMGDIR/$READABLE_FN"
+fi
 
 echo "DONE"
