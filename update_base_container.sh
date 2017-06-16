@@ -129,7 +129,7 @@ EOF_DEFFILE
 fi
 
 echo "Cleaning shared directory..."
-#rm -rf $SHAREDWORKDIR
+rm -rf $SHAREDWORKDIR
 
 if [[ $BUILDMODE = "--remote" ]] || [[ $BUILDMODE = "--all" ]]; then
   echo "An updated container will be available shortly (~30Mins) via singularity pull shub://c1t4r/CiTAR-Containers"
