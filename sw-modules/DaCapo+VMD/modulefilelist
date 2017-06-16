@@ -1,0 +1,5 @@
+/opt/bwhpc/common/modulefiles/chem/dacapo/2.7.16
+/opt/bwhpc/common/modulefiles/compiler/intel/14.0
+/opt/bwhpc/common/modulefiles/chem/vmd/1.9.2
+/opt/bwhpc/common/modulefiles/mpi/openmpi/1.8-intel-14.0
+/opt/bwhpc/common/modulefiles/numlib/mkl/11.1.4
