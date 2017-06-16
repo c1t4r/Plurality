@@ -1,1 +1,5 @@
-/opt/bwhpc/common/chem/gaussian/g09.D.01/ # Gaussian 09
+/opt/bwhpc/common/chem/gaussian/g09.D.01/                                                                   # Gaussian 09
+/opt/bwhpc/common/chem/vmd/1.9.2/bin                                                                        # VMD
+/opt/bwhpc/common/chem/vmd/1.9.2/examples
+/opt/bwhpc/common/chem/vmd/1.9.2/lib
+/opt/bwhpc/common/chem/vmd/1.9.2/modulefiles
