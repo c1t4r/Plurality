@@ -10,7 +10,7 @@ if [[ $# -ne 1 ]]; then
     exit
 fi
 
-INPUTDIR="$1"
+INPUTDIR="$(readlink -f $1)"
 CONTAINERNAME="$(cat $INPUTDIR/containername)".img
 FILELIST="$INPUTDIR/filelist"
 MODFILELIST="$INPUTDIR/modulefilelist"
@@ -32,12 +32,28 @@ echo "${DU}Mb needed in addition, expanding the container..."
 singularity expand --size $DU "$CONTAINERNAME"
 
 echo "Importing files..."
+OLDPWD=$(pwd)
+cd $INPUTDIR
 for filedir in $(cat $FILELIST | sed 's/#.*//'); do
     echo "Importing $filedir ..."
-    tar -cph "$filedir" | singularity import "$CONTAINERNAME"
+    tar -cph "$filedir" | singularity import "$OLDPWD/$CONTAINERNAME"
 done
+cd "$OLDPWD"
 
 echo "Importing module files..."
 for mfile in $(cat $MODFILELIST | sed 's/#.*//'); do
     tar -cph "$mfile" | singularity import "$CONTAINERNAME"
 done
+
+if [[ $(singularity exec DaCapo+ASE.img test -f /.singularity.d/test) -eq 0 ]]; then
+    echo "No container test defined"
+else
+    singularity test "$CONTAINERNAME"
+
+    if [[ "$?" == "0" ]]; then
+        echo "Passed container test"
+    else
+        echo "Failed container test"
+        exit 99
+    fi
+fi
