@@ -13,6 +13,7 @@ fi
 INPUTDIR="$1"
 CONTAINERNAME="$(cat $INPUTDIR/containername)".img
 FILELIST="$INPUTDIR/filelist"
+MODFILELIST="$INPUTDIR/modulefilelist"
 DUF="$INPUTDIR/du"
 
 echo "Downloading latest JUSTUS base container"
@@ -30,3 +31,13 @@ fi
 echo "${DU}Mb needed in addition, expanding the container..."
 singularity expand --size $DU "$CONTAINERNAME"
 
+echo "Importing files..."
+for filedir in $(cat $FILELIST | sed 's/#.*//'); do
+    echo "Importing $filedir ..."
+    tar -cph "$filedir" | singularity import "$CONTAINERNAME"
+done
+
+echo "Importing module files..."
+for mfile in $(cat $MODFILELIST | sed 's/#.*//'); do
+    tar -cph "$mfile" | singularity import "$CONTAINERNAME"
+done
