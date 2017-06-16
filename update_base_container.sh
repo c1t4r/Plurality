@@ -2,16 +2,16 @@
 
 # Works with singularity 2.3 / su
 # Builds a base container image for justus
-
-# Parameters
-#  --local  ; local image only, requires root password
-#  --remote ; triggers remote builds on shub
-#  --all    ; local image plus triggering of remote builds
 #
-# TODO treat build modes properly
 # TODO add dockerfile support
 # 
-# Default is: --all
+# Parameters
+#  --local          : local image only, requires root password
+#  --force-local    : local image only, forces local builds even though image exists, requires root password
+#  --remote         : trigger remote builds on shub, operates unprivileged
+#  --all            : force local image plus triggering of remote builds, requires root password
+#
+# Default is: --local
 BUILDMODE="${1:-'--local'}"
 CALLINGDIR=`dirname $(readlink -f $0)`
 GIT_URL="git@github.com:c1t4r/CiTAR-Containers.git"
@@ -31,7 +31,7 @@ rpm --root $CITARROOTFS -q -a --queryformat '%{NAME} ' | sort > $SHAREDWORKDIR/p
 SRCSUM="$(sha256sum $SHAREDWORKDIR/packagelist.txt | awk '{print $1}')"
 SUM=$( [[ -f $IMGDIR/$SRCSUM/sha256 ]] && cat $IMGDIR/$SRCSUM/sha256 )
 
-if [[ -d $IMGDIR/$SRCSUM ]]; then
+if [[ -d $IMGDIR/$SRCSUM -a -n $BUILDMODE="--remote" ]]; then
     echo "An up-to-date image for $SRCSUM exists already, no changes detected..."
 else
     echo "Building image for $SRCSUM from $VNFSBaseImage..."
@@ -42,9 +42,11 @@ From: centos:7
 IncludeCmd: yes
 
 %runscript
-    echo "This is what happens when you run the container..."
+echo "This code is executed as default run script. For now invoke a bash shell..."
+/bin/bash
 
 %environment
+# These environment settings are needed to make containers run JUSTUS software stack
 module() { eval `/usr/bin/modulecmd sh $*`; }
 export MODULEPATH=/opt/bwhpc/ul/modulefiles:/opt/bwhpc/common/modulefiles
 export PSM_SHAREDCONTEXTS_MAX=6 # do NOT allocate all HCs, leave remaining HCs for other MPI apps running simultaneously
@@ -77,20 +79,23 @@ EOF_DEFFILE
 
     cd $SHAREDWORKDIR 
 
-    git clone $GIT_URL containerspec
-    cp singularity.def containerspec/Singularity
-    cd containerspec
+    if [ $BUILDMODE="--all" -o $BUILDMODE="--remote" ]; then
+        git clone $GIT_URL containerspec
+        cp singularity.def containerspec/Singularity
+        cd containerspec
 
-    echo "" >> README.md
-    echo "* updated build: $(date $DATESTR)" >> README.md
-    git add Singularity README.md
-    git commit -am 'updated build'
-    git push
+        echo "" >> README.md
+        echo "* updated build: $(date $DATESTR)" >> README.md
+        git add Singularity README.md
+        git commit -am 'updated build'
+        git push
 
-    cd ..
+        cd ..
+    fi
 
     ### begin - su part
 
+    if [ -n $BUILDMODE="--remote" ]; then
     echo "Please enter root password for 'su' "
     stty -echo
     read -p "Password: " PASSWD; echo
@@ -105,7 +110,7 @@ EOF_DEFFILE
     echo "$PASSWD" | su -c "$CONTAINER_COMMAND"
 
     # TODO needed???
-    sync
+    #sync
 
     SUM="$(sha256sum centos7-justus.img | awk '{print $1}')"
 
@@ -116,13 +121,22 @@ EOF_DEFFILE
     ln -s $IMGDIR/$SRCSUM/img "$IMGDIR/$SUM"
     echo "Done!"
     ### end - su part
+    fi
 fi
 
+if [ -d $IMGDIR/$SRCSUM ]; then
 echo "Updating the image link..."
 READABLE_FN="$VNFSBaseImage-$(date $DATESTR).img"
 ln -sf $IMGDIR/$SRCSUM/img "$IMGDIR/$READABLE_FN"
+fi
 
 echo "Cleaning shared directory..."
 #rm -rf $SHAREDWORKDIR
 
-echo "DONE: Container is now accessible under $IMGDIR/$READABLE_FN"
+if [ $BUILDMODE="--remote" -o $BUILDMODE="--all" ]; then
+echo "An updated container will be available shortly (~30Mins) via singularity pull shub://c1t4r/CiTAR-Containers"
+fi
+if [ -d $IMGDIR/$SRCSUM ]; then
+echo "Container is locally accessible under $IMGDIR/$READABLE_FN"
+
+echo "DONE"
