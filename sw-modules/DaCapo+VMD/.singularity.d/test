@@ -1,32 +1,29 @@
 #!/bin/bash
 
-if [[ $@ == "" ]]; then
-    echo "No arguments given, running benchmark example..."
+### source environment
+source /.singularity.d/environment
 
-    ### setting up environment
-    unset LANG; export LC_ALL="C"; export MKL_NUM_THREADS=1; export OMP_NUM_THREADS=1
-    ulimit -s unlimited
-    export MOAB_JOBID=${MOAB_JOBID:=`date +%s`}
-    export MOAB_SUBMITDIR=${MOAB_SUBMITDIR:=`pwd`}
-    export MOAB_JOBNAME=${MOAB_JOBNAME:=`basename "$0"`}
-    export MOAB_JOBNAME=$(echo "${MOAB_JOBNAME}" | sed 's/[^a-zA-Z0-9._-]/_/g')
-    export MOAB_NODECOUNT=${MOAB_NODECOUNT:=1}
-    export MOAB_PROCCOUNT=${MOAB_PROCCOUNT:=2}
-    export DACAPO_CORES_PER_NODE=$MOAB_PROCCOUNT
-    export DACAPO_CORES_PER_JOB=$MOAB_PROCCOUNT
+### setting up environment
+unset LANG; export LC_ALL="C"; export MKL_NUM_THREADS=1; export OMP_NUM_THREADS=1
+ulimit -s unlimited
+export MOAB_JOBID=${MOAB_JOBID:=`date +%s`}
+export MOAB_SUBMITDIR=${MOAB_SUBMITDIR:=`pwd`}
+export MOAB_JOBNAME=${MOAB_JOBNAME:=`basename "$0"`}
+export MOAB_JOBNAME=$(echo "${MOAB_JOBNAME}" | sed 's/[^a-zA-Z0-9._-]/_/g')
+export MOAB_NODECOUNT=${MOAB_NODECOUNT:=1}
+export MOAB_PROCCOUNT=${MOAB_PROCCOUNT:=2}
+export DACAPO_CORES_PER_NODE=$MOAB_PROCCOUNT
+export DACAPO_CORES_PER_JOB=$MOAB_PROCCOUNT
 
-    TMPDIR=$(mktemp -d)
+TMPDIR=$(mktemp -d)
 
-    cd $TMPDIR
+cd $TMPDIR
 
-    cp /opt/bwhpc/common/chem/dacapo/2.7.16-intel-14.0/bwhpc-examples/* .
+cp /opt/bwhpc/common/chem/dacapo/2.7.16-intel-14.0/bwhpc-examples/* .
 
-    module load chem/dacapo
-    /usr/bin/python example_COCu111.py
+module load chem/dacapo
+/usr/bin/python example_COCu111.py
 
-    rm -rf $TMPDIR
-    echo "Done!"
-else
-    module load chem/dacapo
-    /usr/bin/python "$@"
-fi
+rm -rf $TMPDIR
+echo "Done!"
+exit 0

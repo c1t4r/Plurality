@@ -1,0 +1,7 @@
+/opt/bwhpc/common/chem/vasp/5.3.3.4/                                                                        # VASP
+/opt/bwhpc/common/compiler/intel/compxe.2015.3.187/impi/5.0.3.048/intel64/lib/libmpifort.so.12*             # workaround wrongly linked MPI lib
+/opt/bwhpc/common/compiler/intel/compxe.2015.3.187/impi/5.0.3.048/intel64/lib/release_mt/libmpi.so.12*      # workaround wrongly linked MPI lib
+/opt/bwhpc/common/chem/vmd/1.9.2/bin                                                                        # VMD
+/opt/bwhpc/common/chem/vmd/1.9.2/examples
+/opt/bwhpc/common/chem/vmd/1.9.2/lib
+/opt/bwhpc/common/chem/vmd/1.9.2/modulefiles
