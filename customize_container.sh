@@ -45,7 +45,9 @@ for mfile in $(cat $MODFILELIST | sed 's/#.*//'); do
     tar -cph "$mfile" | singularity import "$CONTAINERNAME"
 done
 
-if [[ $(singularity exec DaCapo+ASE.img test -f /.singularity.d/test) -eq 0 ]]; then
+singularity exec Vasp+VMD.img test -f /.singularity.d/test && HASTEST=1
+
+if [[ "$HASTEST" = "" ]]; then
     echo "No container test defined"
 else
     singularity test "$CONTAINERNAME"

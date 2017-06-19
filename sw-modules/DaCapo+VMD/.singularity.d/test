@@ -23,7 +23,8 @@ cp /opt/bwhpc/common/chem/dacapo/2.7.16-intel-14.0/bwhpc-examples/* .
 
 module load chem/dacapo
 /usr/bin/python example_COCu111.py
+RETVAL=$?
 
 rm -rf $TMPDIR
 echo "Done!"
-exit 0
+exit $RETVAL
