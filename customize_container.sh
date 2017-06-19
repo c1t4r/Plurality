@@ -2,6 +2,7 @@
 
 # Works with singularity 2.3
 # Customizes a base container image by a given definition file
+# TODO check on faulty params, catch errors!
 
 SHUB_URL="shub://c1t4r/CiTAR-Containers"
 
@@ -10,6 +11,7 @@ if [[ $# -ne 1 ]]; then
     exit
 fi
 
+CALLINGDIR=`dirname $(readlink -f $0)`
 INPUTDIR="$(readlink -f $1)"
 CONTAINERNAME="$(cat $INPUTDIR/containername)".img
 FILELIST="$INPUTDIR/filelist"
@@ -59,3 +61,6 @@ else
         exit 99
     fi
 fi
+
+mv -f "$CONTAINERNAME" "$CALLINGDIR/images/"
+echo "Updated container available under $CALLINGDIR/images/$CONTAINERNAME"
