@@ -5,3 +5,4 @@
 /opt/bwhpc/common/chem/vmd/1.9.2/examples
 /opt/bwhpc/common/chem/vmd/1.9.2/lib
 /opt/bwhpc/common/chem/vmd/1.9.2/modulefiles
+./.singularity.d/test                                                                                        # container test

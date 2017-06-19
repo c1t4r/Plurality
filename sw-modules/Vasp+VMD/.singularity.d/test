@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source /.singularity.d/environment
+module load chem/vasp
+
+cd /tmp
+cp /opt/bwhpc/common/chem/vasp/5.3.3.4/examples/benchPdO2.tar.gz .
+tar xzf benchPdO2.tar.gz
+cd benchPdO2
+vasp -n 8 -s gamma
+RETVAL=$?
+echo "...Finished!"
+exit $RETVAL
