@@ -1,2 +1,11 @@
 # Plurality
-Toolbox for HPC container based on singularity
+
+## Tool box for HPC container based on singularity.
+
+This tool box consists of individual scripts which allow creation, modification and archiving software containers.
+The HPC containers can be used on the HPC site bwForCluster JUSTUS. 
+Planned features:
+
+* tools should work mostly in user space
+* should be easily adaptable to other similar bwHPC sites
+* uses bwCloud service
